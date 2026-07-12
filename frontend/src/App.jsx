@@ -3,8 +3,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
-
-const BoardPage = () => <div>Board page (coming in Step 4)</div>;
+import BoardPage from './pages/BoardPage';
 
 function App() {
   return (

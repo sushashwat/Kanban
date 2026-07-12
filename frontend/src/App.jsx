@@ -1,9 +1,10 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import Dashboard from './pages/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 
-const Dashboard = () => <div>Dashboard (coming in Step 3)</div>;
+const BoardPage = () => <div>Board page (coming in Step 4)</div>;
 
 function App() {
   return (
@@ -17,6 +18,14 @@ function App() {
             <Dashboard />
           </ProtectedRoute>
         }
+      />
+      <Route 
+      path="/board/:id"
+      element={
+          <ProtectedRoute>
+            <BoardPage />
+          </ProtectedRoute>
+      }
       />
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
     </Routes>

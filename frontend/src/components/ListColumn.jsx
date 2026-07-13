@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { Droppable } from '@hello-pangea/dnd';
 import { useDispatch } from 'react-redux';
 import CardItem from './CardItem';
-import { createCardThunk } from '../redux/slices/boardSlice';
+import { createCardThunk, deleteListThunk } from '../redux/slices/boardSlice';
+import ConfirmDialog from './ConfirmDialog';
 
 const ListColumn = ({ list, cards, onCardClick, socket, boardId }) => {
   const [addingCard, setAddingCard] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [cardTitle, setCardTitle] = useState('');
   const dispatch = useDispatch();
 
@@ -27,11 +29,20 @@ const ListColumn = ({ list, cards, onCardClick, socket, boardId }) => {
     setAddingCard(false);
   };
 
-   return (
+  const handleDeleteList = async () => {
+  const result = await dispatch(deleteListThunk(list._id));
+  if (deleteListThunk.fulfilled.match(result)) {
+    socket.emit('listDeleted', { boardId, listId: list._id });
+  }
+  setConfirmDelete(false);
+};
+
+  return (
     <div style={styles.column}>
       <div style={styles.header}>
         <h4 style={styles.title}>{list.title}</h4>
         <span style={styles.count}>{sortedCards.length}</span>
+        <button style={styles.deleteBtn} onClick={() => setConfirmDelete(true)} title="Delete list">×</button>
       </div>
 
       <Droppable droppableId={list._id}>
@@ -70,6 +81,14 @@ const ListColumn = ({ list, cards, onCardClick, socket, boardId }) => {
       ) : (
         <button style={styles.addCardBtn} onClick={() => setAddingCard(true)}>+ Add a card</button>
       )}
+      {confirmDelete && (
+        <ConfirmDialog
+          title="Delete list?"
+          message={`This will permanently delete "${list.title}" and all its cards.`}
+          onConfirm={handleDeleteList}
+          onCancel={() => setConfirmDelete(false)}
+        />
+      )}
     </div>
   );
 };
@@ -82,6 +101,7 @@ const styles = {
   header: { display: 'flex', alignItems: 'center', gap: 8, padding: '2px 6px 10px' },
   title: { fontSize: 14, fontWeight: 600, flex: 1 },
   count: { fontSize: 11, color: 'var(--text-secondary)', background: 'var(--bg-raised)', padding: '1px 7px', borderRadius: 10 },
+  deleteBtn: { background: 'none', color: 'var(--text-secondary)', fontSize: 16 },
   cardList: { flex: 1, overflowY: 'auto', minHeight: 20, padding: '2px 6px', borderRadius: 6 },
   addForm: { padding: '4px 6px' },
   addCardBtn: {

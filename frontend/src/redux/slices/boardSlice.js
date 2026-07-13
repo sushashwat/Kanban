@@ -46,6 +46,15 @@ export const createListThunk = createAsyncThunk('board/createList', async ({ tit
     }
 });
 
+export const deleteListThunk = createAsyncThunk('board/deleteList', async (listId, { rejectWithValue }) => {
+    try {
+        await api.delete(`/lists/${listId}`);
+        return listId;
+    } catch (error) {
+        return rejectWithValue(error.response?.data?.message || 'Failed to delete list');
+    }
+});
+
 export const createCardThunk = createAsyncThunk('board/createCard', async (cardData, { rejectWithValue }) => {
     try {
         const { data } = await api.post('/cards', cardData);
@@ -78,6 +87,15 @@ export const updateCardThunk = createAsyncThunk(
         }
     }
 );
+
+export const deleteCardThunk = createAsyncThunk('board/deleteCard', async (cardId, { rejectWithValue }) => {
+    try {
+        await api.delete(`/cards/${cardId}`);
+        return cardId;
+    } catch (error) {
+        return rejectWithValue(error.response?.data?.message || 'Failed to delete card');
+    }
+});
 
 const boardSlice = createSlice({
     name: 'board',
@@ -135,6 +153,13 @@ const boardSlice = createSlice({
             const idx = state.cards.findIndex((c) => c._id === action.payload._id);
             if (idx !== -1) state.cards[idx] = action.payload;
         },
+        socketListDeleted: (state, action) => {
+            state.lists = state.lists.filter((l) => l._id !== action.payload);
+            state.cards = state.cards.filter((c) => c.list !== action.payload);
+        },
+        socketCardDeleted: (state, action) => {
+            state.cards = state.cards.filter((c) => c._id !== action.payload);
+        },
     },
     extraReducers: (builder) => {
         builder
@@ -173,9 +198,16 @@ const boardSlice = createSlice({
             .addCase(updateCardThunk.fulfilled, (state, action) => {
                 const idx = state.cards.findIndex((c) => c._id === action.payload._id);
                 if (idx !== -1) state.cards[idx] = action.payload;
-            });
-        },
+            })
+            .addCase(deleteListThunk.fulfilled, (state, action) => {
+                state.lists = state.lists.filter((l) => l._id !== action.payload);
+                state.cards = state.cards.filter((c) => c.list !== action.payload);
+            })
+            .addCase(deleteCardThunk.fulfilled, (state, action) => {
+                state.cards = state.cards.filter((c) => c._id !== action.payload);
+            })
+    },
 });
 
-export const { clearCurrentBoard, reorderCardsLocally, socketListCreated, socketCardCreated, socketCardUpdated, socketCardMoved } = boardSlice.actions;
+export const { clearCurrentBoard, reorderCardsLocally, socketListCreated, socketCardCreated, socketCardUpdated, socketCardMoved, socketListDeleted, socketCardDeleted } = boardSlice.actions;
 export default boardSlice.reducer;

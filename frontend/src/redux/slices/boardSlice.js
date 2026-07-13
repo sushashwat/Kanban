@@ -97,6 +97,15 @@ export const deleteCardThunk = createAsyncThunk('board/deleteCard', async (cardI
     }
 });
 
+export const addMemberThunk = createAsyncThunk('board/addMember', async ({ boardId, email }, { rejectWithValue }) => {
+    try {
+        const { data } = await api.post(`/boards/${boardId}/members`, { email });
+        return data;
+    } catch (error) {
+        return rejectWithValue(error.response?.data?.message || 'Failed to add member');
+    }
+});
+
 const boardSlice = createSlice({
     name: 'board',
     initialState: {
@@ -205,6 +214,9 @@ const boardSlice = createSlice({
             })
             .addCase(deleteCardThunk.fulfilled, (state, action) => {
                 state.cards = state.cards.filter((c) => c._id !== action.payload);
+            })
+            .addCase(addMemberThunk.fulfilled, (state, action) => {
+                state.currentBoard = action.payload;
             })
     },
 });

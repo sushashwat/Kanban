@@ -8,6 +8,8 @@ import {
     createListThunk,
     moveCardThunk,
     reorderCardsLocally,
+    socketListDeleted,
+    socketCardDeleted
 } from '../redux/slices/boardSlice';
 import { useBoardRoom, getSocket } from '../hooks/useSocket';
 import ListColumn from '../components/ListColumn';
@@ -38,11 +40,15 @@ const BoardPage = () => {
         const onCardCreated = (card) => dispatch(socketCardCreated(card));
         const onCardUpdated = (card) => dispatch(socketCardUpdated(card));
         const onCardMoved = (card) => dispatch(socketCardMoved(card));
+        const onListDeleted = (listId) => dispatch(socketListDeleted(listId));
+        const onCardDeleted = (cardId) => dispatch(socketCardDeleted(cardId));
 
         s.on('listCreated', onListCreated);
         s.on('cardCreated', onCardCreated);
         s.on('cardUpdated', onCardUpdated);
         s.on('cardMoved', onCardMoved);
+        s.on('cardDeleted', onCardDeleted)
+        s.on('listDeleted', onListDeleted);
 
         return () => {
             s.off('listCreated', onListCreated);

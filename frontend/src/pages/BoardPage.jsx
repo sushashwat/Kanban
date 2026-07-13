@@ -8,12 +8,17 @@ import {
     createListThunk,
     moveCardThunk,
     reorderCardsLocally,
+    socketListCreated,     
+    socketCardCreated,      
+    socketCardUpdated,      
+    socketCardMoved, 
     socketListDeleted,
     socketCardDeleted
 } from '../redux/slices/boardSlice';
 import { useBoardRoom, getSocket } from '../hooks/useSocket';
 import ListColumn from '../components/ListColumn';
 import CardDetailModal from '../components/CardDetailModal';
+import AddMemberModal from '../components/AddMemberModal';
 
 const BoardPage = () => {
     const { id: boardId } = useParams();
@@ -26,6 +31,7 @@ const BoardPage = () => {
     const [selectedCard, setSelectedCard] = useState(null);
     const [listTitle, setListTitle] = useState('');
     const [addingList, setAddingList] = useState(false);
+    const [showAddMember, setShowAddMember] = useState(false);
 
     useEffect(() => {
         dispatch(fetchBoardDetail(boardId));
@@ -55,6 +61,8 @@ const BoardPage = () => {
             s.off('cardCreated', onCardCreated);
             s.off('cardUpdated', onCardUpdated);
             s.off('cardMoved', onCardMoved);
+            s.off('cardDeleted', onCardDeleted);  
+            s.off('listDeleted', onListDeleted);
         };
     }, [dispatch]);
 
@@ -107,6 +115,25 @@ const BoardPage = () => {
             <header style={styles.header}>
                 <button className="btn-ghost" onClick={() => navigate('/dashboard')}>← Boards</button>
                 <h2 style={styles.boardTitle}>{currentBoard.title}</h2>
+                <div style={{ display: 'flex', alignItems: 'center', marginLeft: 'auto' }}>
+                    {currentBoard.members?.slice(0, 5).map((m) => (
+                        <div
+                            key={m._id}
+                            style={{
+                                width: 28, height: 28, borderRadius: '50%', display: 'flex',
+                                alignItems: 'center', justifyContent: 'center', fontSize: 12,
+                                fontWeight: 700, color: '#0d1117', marginLeft: -8,
+                                border: '2px solid var(--bg-void)', background: m.avatarColor,
+                            }}
+                            title={m.name}
+                        >
+                            {m.name?.[0]?.toUpperCase()}
+                        </div>
+                    ))}
+                    <button className="btn-ghost" style={{ marginLeft: 10 }} onClick={() => setShowAddMember(true)}>
+                        + Invite
+                    </button>
+                </div>
             </header>
 
             <DragDropContext onDragEnd={handleDragEnd}>
@@ -153,13 +180,14 @@ const BoardPage = () => {
                     boardId={boardId}
                 />
             )}
+            {showAddMember && <AddMemberModal boardId={boardId} onClose={() => setShowAddMember(false)} />}
         </div>
     );
 };
 
 const styles = {
     wrap: { minHeight: '100vh', background: 'var(--bg-void)', display: 'flex', flexDirection: 'column' },
-    loadingWrap: { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' },
+    loadingWrap: { minHeight: '100vh', display: 'flex', alignItems:     'center', justifyContent: 'center', color: 'var(--text-secondary)' },
     header: { display: 'flex', alignItems: 'center', gap: 16, padding: '14px 24px', borderBottom: '1px solid var(--border-subtle)' },
     boardTitle: { fontSize: 17, fontWeight: 700, flex: 1 },
     board: { display: 'flex', gap: 14, padding: '20px 24px', overflowX: 'auto', flex: 1, alignItems: 'flex-start' },

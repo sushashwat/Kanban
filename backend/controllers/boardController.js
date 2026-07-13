@@ -141,5 +141,64 @@ const addMember = async (req, res) => {
   }
 };
 
+// @desc    Leave a board (remove yourself from members)
+// @route   POST /api/boards/:id/leave
+// @access  Private
+const leaveBoard = async (req, res) => {
+  try {
+    const board = await Board.findById(req.params.id);
+    if (!board) return res.status(404).json({ message: 'Board not found' });
 
-export { getBoards, createBoard, getBoardById, deleteBoard, addMember };
+    if (board.owner.toString() === req.user._id.toString()) {
+      return res.status(400).json({ message: 'Owner cannot leave the board. Delete it instead.' });
+    }
+
+    const isMember = board.members.some((m) => m.toString() === req.user._id.toString());
+    if (!isMember) {
+      return res.status(400).json({ message: 'You are not a member of this board' });
+    }
+
+    board.members = board.members.filter((m) => m.toString() !== req.user._id.toString());
+    await board.save();
+
+    res.json({ message: 'Left board successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Remove a member from board (owner only)
+// @route   DELETE /api/boards/:id/members/:memberId
+// @access  Private
+const removeMember = async (req, res) => {
+  try {
+    const board = await Board.findById(req.params.id);
+    if (!board) return res.status(404).json({ message: 'Board not found' });
+
+    if (board.owner.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Only the board owner can remove members' });
+    }
+
+    const { memberId } = req.params;
+
+    if (memberId === board.owner.toString()) {
+      return res.status(400).json({ message: 'Owner cannot be removed' });
+    }
+
+    board.members = board.members.filter((m) => m.toString() !== memberId);
+    await board.save();
+
+    const populatedBoard = await Board.findById(board._id)
+      .populate('owner', 'name email avatarColor')
+      .populate('members', 'name email avatarColor');
+
+    res.json(populatedBoard);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+export { getBoards, createBoard, getBoardById, deleteBoard, addMember, leaveBoard, removeMember };

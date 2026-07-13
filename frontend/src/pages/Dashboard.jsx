@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { fetchBoards, createBoard, deleteBoardThunk } from '../redux/slices/boardSlice';
+import { fetchBoards, createBoard, deleteBoardThunk, leaveBoardThunk } from '../redux/slices/boardSlice';
 import { logout } from '../redux/slices/authSlice';
 import ConfirmDialog from '../components/ConfirmDialog';
 
@@ -37,6 +37,12 @@ const Dashboard = () => {
     setConfirmDeleteId(null);
   };
 
+  const handleLeave = (e, boardId) => {
+    e.stopPropagation();
+    if (window.confirm('Leave this board?')) {
+      dispatch(leaveBoardThunk(boardId));
+    }
+  };
 
   return (
     <div style={styles.wrap}>
@@ -91,8 +97,10 @@ const Dashboard = () => {
             >
               <div style={styles.boardCardTop}>
                 <h3 style={styles.boardTitle}>{b.title}</h3>
-                {b.owner?._id === userInfo?._id && (
+                {b.owner?._id === userInfo?._id ? (
                   <button onClick={(e) => handleDelete(e, b._id)} style={styles.deleteBtn} title="Delete board">×</button>
+                ) : (
+                  <button onClick={(e) => handleLeave(e, b._id)} style={{ ...styles.deleteBtn, fontSize: 12 }} title="Leave board">Leave</button>
                 )}
               </div>
               <p style={styles.memberCount}>

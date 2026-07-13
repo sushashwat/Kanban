@@ -106,6 +106,24 @@ export const addMemberThunk = createAsyncThunk('board/addMember', async ({ board
     }
 });
 
+export const leaveBoardThunk = createAsyncThunk('board/leaveBoard', async (boardId, { rejectWithValue }) => {
+    try {
+        await api.post(`/boards/${boardId}/leave`);
+        return boardId;
+    } catch (error) {
+        return rejectWithValue(error.response?.data?.message || 'Failed to leave board');
+    }
+});
+
+export const removeMemberThunk = createAsyncThunk('board/removeMember', async ({ boardId, memberId }, { rejectWithValue }) => {
+    try {
+        const { data } = await api.delete(`/boards/${boardId}/members/${memberId}`);
+        return data;
+    } catch (error) {
+        return rejectWithValue(error.response?.data?.message || 'Failed to remove member');
+    }
+});
+
 const boardSlice = createSlice({
     name: 'board',
     initialState: {
@@ -216,6 +234,12 @@ const boardSlice = createSlice({
                 state.cards = state.cards.filter((c) => c._id !== action.payload);
             })
             .addCase(addMemberThunk.fulfilled, (state, action) => {
+                state.currentBoard = action.payload;
+            })
+            .addCase(leaveBoardThunk.fulfilled, (state, action) => {
+                state.boards = state.boards.filter((b) => b._id !== action.payload);
+            })
+            .addCase(removeMemberThunk.fulfilled, (state, action) => {
                 state.currentBoard = action.payload;
             })
     },

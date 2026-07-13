@@ -8,10 +8,10 @@ import {
     createListThunk,
     moveCardThunk,
     reorderCardsLocally,
-    socketListCreated,     
-    socketCardCreated,      
-    socketCardUpdated,      
-    socketCardMoved, 
+    socketListCreated,
+    socketCardCreated,
+    socketCardUpdated,
+    socketCardMoved,
     socketListDeleted,
     socketCardDeleted
 } from '../redux/slices/boardSlice';
@@ -19,6 +19,7 @@ import { useBoardRoom, getSocket } from '../hooks/useSocket';
 import ListColumn from '../components/ListColumn';
 import CardDetailModal from '../components/CardDetailModal';
 import AddMemberModal from '../components/AddMemberModal';
+import MemberListModal from '../components/MemberListModal';
 
 const BoardPage = () => {
     const { id: boardId } = useParams();
@@ -32,6 +33,8 @@ const BoardPage = () => {
     const [listTitle, setListTitle] = useState('');
     const [addingList, setAddingList] = useState(false);
     const [showAddMember, setShowAddMember] = useState(false);
+    const [showMembers, setShowMembers] = useState(false);
+    const { userInfo } = useSelector((state) => state.auth);
 
     useEffect(() => {
         dispatch(fetchBoardDetail(boardId));
@@ -61,7 +64,7 @@ const BoardPage = () => {
             s.off('cardCreated', onCardCreated);
             s.off('cardUpdated', onCardUpdated);
             s.off('cardMoved', onCardMoved);
-            s.off('cardDeleted', onCardDeleted);  
+            s.off('cardDeleted', onCardDeleted);
             s.off('listDeleted', onListDeleted);
         };
     }, [dispatch]);
@@ -116,6 +119,7 @@ const BoardPage = () => {
                 <button className="btn-ghost" onClick={() => navigate('/dashboard')}>← Boards</button>
                 <h2 style={styles.boardTitle}>{currentBoard.title}</h2>
                 <div style={{ display: 'flex', alignItems: 'center', marginLeft: 'auto' }}>
+                    <div style={{ display: 'flex', cursor: 'pointer' }} onClick={() => setShowMembers(true)}></div>
                     {currentBoard.members?.slice(0, 5).map((m) => (
                         <div
                             key={m._id}
@@ -181,13 +185,14 @@ const BoardPage = () => {
                 />
             )}
             {showAddMember && <AddMemberModal boardId={boardId} onClose={() => setShowAddMember(false)} />}
+            <MemberListModal board={currentBoard} currentUserId={userInfo._id} onClose={() => setShowMembers(false)} />
         </div>
     );
 };
 
 const styles = {
     wrap: { minHeight: '100vh', background: 'var(--bg-void)', display: 'flex', flexDirection: 'column' },
-    loadingWrap: { minHeight: '100vh', display: 'flex', alignItems:     'center', justifyContent: 'center', color: 'var(--text-secondary)' },
+    loadingWrap: { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' },
     header: { display: 'flex', alignItems: 'center', gap: 16, padding: '14px 24px', borderBottom: '1px solid var(--border-subtle)' },
     boardTitle: { fontSize: 17, fontWeight: 700, flex: 1 },
     board: { display: 'flex', gap: 14, padding: '20px 24px', overflowX: 'auto', flex: 1, alignItems: 'flex-start' },

@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { updateCardThunk } from '../redux/slices/boardSlice';
+import { updateCardThunk, deleteCardThunk } from '../redux/slices/boardSlice';
+import ConfirmDialog from './ConfirmDialog';
+
 
 const CardDetailModal = ({ card, onClose, socket, boardId }) => {
   const [title, setTitle] = useState(card.title);
   const [description, setDescription] = useState(card.description || '');
   const [priority, setPriority] = useState(card.priority);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const dispatch = useDispatch();
 
   const handleSave = async () => {
@@ -14,6 +17,14 @@ const CardDetailModal = ({ card, onClose, socket, boardId }) => {
     );
     if (updateCardThunk.fulfilled.match(result)) {
       socket.emit('cardUpdated', { boardId, card: result.payload });
+    }
+    onClose();
+  };
+
+  const handleDelete = async () => {
+    const result = await dispatch(deleteCardThunk(card._id));
+    if (deleteCardThunk.fulfilled.match(result)) {
+      socket.emit('cardDeleted', { boardId, cardId: card._id });
     }
     onClose();
   };
@@ -44,10 +55,22 @@ const CardDetailModal = ({ card, onClose, socket, boardId }) => {
         </div>
 
         <div style={styles.actions}>
+          <button className="btn-ghost" style={{ color: 'var(--danger)' }} onClick={() => setConfirmDelete(true)}>
+            Delete card
+          </button>
+          <div style={{ display: 'flex', gap: 10 }}></div>
           <button className="btn-ghost" onClick={onClose}>Cancel</button>
           <button className="btn" onClick={handleSave}>Save changes</button>
         </div>
       </div>
+      {confirmDelete && (
+        <ConfirmDialog
+          title="Delete card?"
+          message={`This will permanently delete "${card.title}".`}
+          onConfirm={handleDelete}
+          onCancel={() => setConfirmDelete(false)}
+        />
+      )}
     </div>
   );
 };
@@ -63,7 +86,7 @@ const styles = {
   },
   titleInput: { fontSize: 17, fontWeight: 600, padding: '8px 10px' },
   label: { display: 'block', fontSize: 12, color: 'var(--text-secondary)', marginBottom: 6 },
-  actions: { display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 4 },
+  actions: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 },
 };
 
 export default CardDetailModal;

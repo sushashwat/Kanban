@@ -3,12 +3,14 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { fetchBoards, createBoard, deleteBoardThunk } from '../redux/slices/boardSlice';
 import { logout } from '../redux/slices/authSlice';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 const COLORS = ['#F0883E', '#3FB950', '#58A6FF', '#DB61A2', '#A371F7'];
 
 const Dashboard = () => {
   const [newTitle, setNewTitle] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { boards, loading } = useSelector((state) => state.board);
@@ -27,9 +29,12 @@ const Dashboard = () => {
 
   const handleDelete = (e, boardId) => {
     e.stopPropagation();
-    if (window.confirm('Delete this board?')) {
-      dispatch(deleteBoardThunk(boardId));
-    }
+    setConfirmDeleteId(boardId);
+  };
+
+  const confirmDelete = () => {
+    dispatch(deleteBoardThunk(confirmDeleteId));
+    setConfirmDeleteId(null);
   };
 
 
@@ -97,6 +102,14 @@ const Dashboard = () => {
           ))}
         </div>
       </main>
+      {confirmDeleteId && (
+        <ConfirmDialog
+          title="Delete board?"
+          message="This will permanently delete the board and all its lists and cards."
+          onConfirm={confirmDelete}
+          onCancel={() => setConfirmDeleteId(null)}
+        />
+      )}
     </div>
   );
 };

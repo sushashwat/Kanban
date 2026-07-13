@@ -1,6 +1,7 @@
 import Board from '../models/Board.js';
 import List from '../models/List.js';
 import Card from '../models/Card.js';
+import User from '../models/User.js';
 
 // @desc    Get all boards for logged-in user (owned or member of)
 // @route   GET /api/boards
@@ -105,4 +106,40 @@ const deleteBoard = async (req, res) => {
   }
 };
 
-export { getBoards, createBoard, getBoardById, deleteBoard };
+// @desc    Add a member to board by email
+// @route   POST /api/boards/:id/members
+// @access  Private
+const addMember = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const board = await Board.findById(req.params.id);
+    if (!board) return res.status(404).json({ message: 'Board not found' });
+
+    if (board.owner.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Only the board owner can add members' });
+    }
+
+    const userToAdd = await User.findOne({ email });
+    if (!userToAdd) return res.status(404).json({ message: 'User not found' });
+
+    if (board.members.includes(userToAdd._id)) {
+      return res.status(400).json({ message: 'User already a member' });
+    }
+
+    board.members.push(userToAdd._id);
+    await board.save();
+
+    const populatedBoard = await Board.findById(board._id)
+      .populate('owner', 'name email avatarColor')
+      .populate('members', 'name email avatarColor');
+
+    res.json(populatedBoard);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+export { getBoards, createBoard, getBoardById, deleteBoard, addMember };

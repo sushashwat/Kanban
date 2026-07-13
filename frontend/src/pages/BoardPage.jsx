@@ -23,6 +23,7 @@ const BoardPage = () => {
 
     const [selectedCard, setSelectedCard] = useState(null);
     const [listTitle, setListTitle] = useState('');
+    const [addingList, setAddingList] = useState(false);
 
     useEffect(() => {
         dispatch(fetchBoardDetail(boardId));
@@ -89,17 +90,21 @@ const BoardPage = () => {
         setListTitle('');
     };
 
-    if (loading || !currentBoard) return <div>Loading board...</div>;
+    if (loading || !currentBoard) {
+        return <div style={styles.loadingWrap}>Loading board...</div>;
+    }
 
     const sortedLists = [...lists].sort((a, b) => a.order - b.order);
 
     return (
-        <div style={{ padding: 20 }}>
-            <button onClick={() => navigate('/dashboard')}>← Boards</button>
-            <h2>{currentBoard.title}</h2>
+        <div style={styles.wrap}>
+            <header style={styles.header}>
+                <button className="btn-ghost" onClick={() => navigate('/dashboard')}>← Boards</button>
+                <h2 style={styles.boardTitle}>{currentBoard.title}</h2>
+            </header>
 
             <DragDropContext onDragEnd={handleDragEnd}>
-                <div style={{ display: 'flex', gap: 12, overflowX: 'auto' }}>
+                <div style={styles.board}>
                     {sortedLists.map((list) => (
                         <ListColumn
                             key={list._id}
@@ -111,14 +116,26 @@ const BoardPage = () => {
                         />
                     ))}
 
-                    <form onSubmit={handleAddList}>
-                        <input
-                            value={listTitle}
-                            onChange={(e) => setListTitle(e.target.value)}
-                            placeholder="+ Add list"
-                        />
-                        <button type="submit">Add</button>
-                    </form>
+                    <div style={styles.addListWrap}>
+                        {addingList ? (
+                            <form onSubmit={handleAddList}>
+                                <input
+                                    className="input"
+                                    autoFocus
+                                    placeholder="List title..."
+                                    value={listTitle}
+                                    onChange={(e) => setListTitle(e.target.value)}
+                                    onBlur={() => !listTitle && setAddingList(false)}
+                                />
+                                <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                                    <button className="btn" type="submit" style={{ padding: '6px 14px', fontSize: 13 }}>Add list</button>
+                                    <button className="btn-ghost" type="button" style={{ padding: '6px 14px', fontSize: 13 }} onClick={() => setAddingList(false)}>Cancel</button>
+                                </div>
+                            </form>
+                        ) : (
+                            <button style={styles.addListBtn} onClick={() => setAddingList(true)}>+ Add another list</button>
+                        )}
+                    </div>
                 </div>
             </DragDropContext>
 
@@ -128,11 +145,24 @@ const BoardPage = () => {
                     onClose={() => setSelectedCard(null)}
                     socket={socket}
                     boardId={boardId}
-                    onUpdated={() => { }}
                 />
             )}
         </div>
     );
 };
+
+const styles = {
+    wrap: { minHeight: '100vh', background: 'var(--bg-void)', display: 'flex', flexDirection: 'column' },
+    loadingWrap: { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' },
+    header: { display: 'flex', alignItems: 'center', gap: 16, padding: '14px 24px', borderBottom: '1px solid var(--border-subtle)' },
+    boardTitle: { fontSize: 17, fontWeight: 700, flex: 1 },
+    board: { display: 'flex', gap: 14, padding: '20px 24px', overflowX: 'auto', flex: 1, alignItems: 'flex-start' },
+    addListWrap: { width: 260, flexShrink: 0 },
+    addListBtn: {
+        background: 'var(--bg-panel)', border: '1px dashed var(--border-subtle)', color: 'var(--text-secondary)',
+        borderRadius: 8, padding: '12px 14px', width: '100%', textAlign: 'left', fontSize: 13.5,
+    },
+};
+
 
 export default BoardPage;

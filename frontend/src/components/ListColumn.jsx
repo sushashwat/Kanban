@@ -27,9 +27,12 @@ const ListColumn = ({ list, cards, onCardClick, socket, boardId }) => {
     setAddingCard(false);
   };
 
-  return (
-    <div style={{ width: 260, background: '#f4f4f4', padding: 10, borderRadius: 6 }}>
-      <h4>{list.title} ({sortedCards.length})</h4>
+   return (
+    <div style={styles.column}>
+      <div style={styles.header}>
+        <h4 style={styles.title}>{list.title}</h4>
+        <span style={styles.count}>{sortedCards.length}</span>
+      </div>
 
       <Droppable droppableId={list._id}>
         {(provided, snapshot) => (
@@ -37,8 +40,8 @@ const ListColumn = ({ list, cards, onCardClick, socket, boardId }) => {
             ref={provided.innerRef}
             {...provided.droppableProps}
             style={{
-              minHeight: 20,
-              background: snapshot.isDraggingOver ? '#dde' : 'transparent',
+              ...styles.cardList,
+              background: snapshot.isDraggingOver ? 'var(--accent-dim)' : 'transparent',
             }}
           >
             {sortedCards.map((card, index) => (
@@ -50,21 +53,41 @@ const ListColumn = ({ list, cards, onCardClick, socket, boardId }) => {
       </Droppable>
 
       {addingCard ? (
-        <form onSubmit={handleAddCard}>
+        <form onSubmit={handleAddCard} style={styles.addForm}>
           <input
+            className="input"
             autoFocus
+            placeholder="Card title..."
             value={cardTitle}
             onChange={(e) => setCardTitle(e.target.value)}
-            placeholder="Card title..."
+            onBlur={() => !cardTitle && setAddingCard(false)}
           />
-          <button type="submit">Add</button>
-          <button type="button" onClick={() => setAddingCard(false)}>Cancel</button>
+          <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+            <button className="btn" type="submit" style={{ padding: '6px 14px', fontSize: 13 }}>Add</button>
+            <button className="btn-ghost" type="button" style={{ padding: '6px 14px', fontSize: 13 }} onClick={() => setAddingCard(false)}>Cancel</button>
+          </div>
         </form>
       ) : (
-        <button onClick={() => setAddingCard(true)}>+ Add a card</button>
+        <button style={styles.addCardBtn} onClick={() => setAddingCard(true)}>+ Add a card</button>
       )}
     </div>
   );
+};
+
+const styles = {
+  column: {
+    background: 'var(--bg-panel)', borderRadius: 8, width: 280, flexShrink: 0,
+    padding: '12px 10px', maxHeight: 'calc(100vh - 180px)', display: 'flex', flexDirection: 'column',
+  },
+  header: { display: 'flex', alignItems: 'center', gap: 8, padding: '2px 6px 10px' },
+  title: { fontSize: 14, fontWeight: 600, flex: 1 },
+  count: { fontSize: 11, color: 'var(--text-secondary)', background: 'var(--bg-raised)', padding: '1px 7px', borderRadius: 10 },
+  cardList: { flex: 1, overflowY: 'auto', minHeight: 20, padding: '2px 6px', borderRadius: 6 },
+  addForm: { padding: '4px 6px' },
+  addCardBtn: {
+    background: 'none', color: 'var(--text-secondary)', textAlign: 'left',
+    padding: '8px 8px', fontSize: 13, borderRadius: 6,
+  },
 };
 
 export default ListColumn;

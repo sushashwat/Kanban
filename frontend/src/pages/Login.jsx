@@ -23,32 +23,71 @@ const Login = () => {
     dispatch(loginUser({ email, password }));
   };
 
-  return (
-    <div>
-      <h2>Sign in</h2>
-      <form onSubmit={handleSubmit}>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="Email"
-          required
-        />
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Password"
-          required
-        />
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-        <button type="submit" disabled={loading}>
-          {loading ? 'Signing in...' : 'Sign in'}
-        </button>
-      </form>
-      <p>No account? <Link to="/register">Create one</Link></p>
+   return (
+    <div style={styles.wrap}>
+      <div style={styles.card}>
+        <div className="mono" style={styles.logo}>▣ boardroom</div>
+        <p style={styles.subtitle}>Sign in to your workspace</p>
+
+        <form onSubmit={handleSubmit} style={styles.form}>
+          <div>
+            <label style={styles.label}>Email</label>
+            <input
+              className="input"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              required
+            />
+          </div>
+          <div>
+            <label style={styles.label}>Password</label>
+            <input
+              className="input"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+            />
+          </div>
+
+          {error && <p className="error-text">{error}</p>}
+
+          <button className="btn" type="submit" disabled={loading} style={{ width: '100%' }}>
+            {loading ? 'Signing in...' : 'Sign in'}
+          </button>
+        </form>
+
+        <p style={styles.footer}>
+          No account? <Link to="/register" style={{ color: 'var(--accent)' }}>Create one</Link>
+        </p>
+      </div>
     </div>
   );
+};
+
+const styles = {
+  wrap: {
+    minHeight: '100vh',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: 'var(--bg-void)',
+  },
+  card: {
+    width: 380,
+    background: 'var(--bg-panel)',
+    border: '1px solid var(--border-subtle)',
+    borderRadius: 10,
+    padding: '36px 32px',
+  },
+  logo: { fontSize: 20, fontWeight: 700, color: 'var(--accent)', marginBottom: 4 },
+  subtitle: { color: 'var(--text-secondary)', fontSize: 14, marginBottom: 24 },
+  form: { display: 'flex', flexDirection: 'column', gap: 14 },
+  label: { display: 'block', fontSize: 13, color: 'var(--text-secondary)', marginBottom: 6 },
+  footer: { marginTop: 20, fontSize: 13, color: 'var(--text-secondary)', textAlign: 'center' },
 };
 
 export default Login;

@@ -67,6 +67,18 @@ export const moveCardThunk = createAsyncThunk(
     }
 );
 
+export const updateCardThunk = createAsyncThunk(
+    'board/updateCard',
+    async ({ cardId, updates }, { rejectWithValue }) => {
+        try {
+            const { data } = await api.put(`/cards/${cardId}`, updates);
+            return data;
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message || 'Failed to update card');
+        }
+    }
+);
+
 const boardSlice = createSlice({
     name: 'board',
     initialState: {
@@ -157,8 +169,12 @@ const boardSlice = createSlice({
             .addCase(moveCardThunk.fulfilled, (state, action) => {
                 const idx = state.cards.findIndex((c) => c._id === action.payload._id);
                 if (idx !== -1) state.cards[idx] = action.payload;
+            })
+            .addCase(updateCardThunk.fulfilled, (state, action) => {
+                const idx = state.cards.findIndex((c) => c._id === action.payload._id);
+                if (idx !== -1) state.cards[idx] = action.payload;
             });
-    },
+        },
 });
 
 export const { clearCurrentBoard, reorderCardsLocally, socketListCreated, socketCardCreated, socketCardUpdated, socketCardMoved } = boardSlice.actions;

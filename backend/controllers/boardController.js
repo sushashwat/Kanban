@@ -71,10 +71,10 @@ const getBoardById = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to view this board' });
     }
 
-    const lists = await List.find({ board: board._id }).sort({ order: 1 });
-    const cards = await Card.find({ board: board._id })
-      .populate('assignedTo', 'name email avatarColor')
-      .sort({ order: 1 });
+    const [lists, cards] = await Promise.all([
+      List.find({ board: board._id }).sort({ order: 1 }),
+      Card.find({ board: board._id }).populate('assignedTo', 'name email avatarColor').sort({ order: 1 }),
+    ]);
 
     res.json({ board, lists, cards });
   } catch (error) {
@@ -100,6 +100,38 @@ const deleteBoard = async (req, res) => {
     await board.deleteOne();
 
     res.json({ message: 'Board deleted' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Update board title
+// @route   PUT /api/boards/:id
+// @access  Private
+const updateBoard = async (req, res) => {
+  try {
+    const board = await Board.findById(req.params.id);
+    if (!board) return res.status(404).json({ message: 'Board not found' });
+
+    const isMember = board.members.some((m) => m.toString() === req.user._id.toString());
+    if (!isMember) {
+      return res.status(403).json({ message: 'Not authorized to edit this board' });
+    }
+
+    const { title } = req.body;
+    if (!title || !title.trim()) {
+      return res.status(400).json({ message: 'Title cannot be empty' });
+    }
+
+    board.title = title.trim();
+    await board.save();
+
+    const populatedBoard = await Board.findById(board._id)
+      .populate('owner', 'name email avatarColor')
+      .populate('members', 'name email avatarColor');
+
+    res.json(populatedBoard);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: error.message });
@@ -201,4 +233,4 @@ const removeMember = async (req, res) => {
 };
 
 
-export { getBoards, createBoard, getBoardById, deleteBoard, addMember, leaveBoard, removeMember };
+export { getBoards, createBoard, getBoardById, deleteBoard,  updateBoard, addMember, leaveBoard, removeMember };

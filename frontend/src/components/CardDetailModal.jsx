@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { updateCardThunk, deleteCardThunk } from '../redux/slices/boardSlice';
+import { updateCardThunk, deleteCardThunk, addCommentThunk } from '../redux/slices/boardSlice';
 import ConfirmDialog from './ConfirmDialog';
 
 
@@ -8,6 +8,7 @@ const CardDetailModal = ({ card, onClose, socket, boardId }) => {
   const [title, setTitle] = useState(card.title);
   const [description, setDescription] = useState(card.description || '');
   const [priority, setPriority] = useState(card.priority);
+  const [commentText, setCommentText] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const dispatch = useDispatch();
 
@@ -27,6 +28,16 @@ const CardDetailModal = ({ card, onClose, socket, boardId }) => {
       socket.emit('cardDeleted', { boardId, cardId: card._id });
     }
     onClose();
+  };
+
+  const handleAddComment = async (e) => {
+    e.preventDefault();
+    if (!commentText.trim()) return;
+    const result = await dispatch(addCommentThunk({ cardId: card._id, text: commentText.trim() }));
+    if (addCommentThunk.fulfilled.match(result)) {
+      socket.emit('cardUpdated', { boardId, card: result.payload });
+    }
+    setCommentText('');
   };
 
   return (
@@ -52,6 +63,31 @@ const CardDetailModal = ({ card, onClose, socket, boardId }) => {
             onChange={(e) => setDescription(e.target.value)}
             style={{ resize: 'vertical' }}
           />
+        </div>
+
+        <div>
+          <label style={styles.label}>Comments</label>
+          <div style={{ maxHeight: 160, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 10 }}>
+            {card.comments?.length > 0 ? (
+              card.comments.map((c, i) => (
+                <div key={i} style={{ background: 'var(--bg-raised)', borderRadius: 6, padding: '8px 10px' }}>
+                  <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent)' }}>{c.author?.name || 'Unknown'}</p>
+                  <p style={{ fontSize: 13, marginTop: 2 }}>{c.text}</p>
+                </div>
+              ))
+            ) : (
+              <p style={{ fontSize: 12, color: 'var(--text-secondary)' }}>No comments yet.</p>
+            )}
+          </div>
+          <form onSubmit={handleAddComment} style={{ display: 'flex', gap: 8 }}>
+            <input
+              className="input"
+              placeholder="Add a comment..."
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+            />
+            <button className="btn" type="submit" style={{ padding: '8px 14px', fontSize: 13 }}>Post</button>
+          </form>
         </div>
 
         <div style={styles.actions}>

@@ -133,6 +133,26 @@ export const removeMemberThunk = createAsyncThunk('board/removeMember', async ({
     }
 });
 
+export const addCommentThunk = createAsyncThunk('board/addComment', async ({ cardId, text }, { rejectWithValue }) => {
+    try {
+        const { data } = await api.post(`/cards/${cardId}/comments`, { text });
+        return data;
+    } catch (error) {
+        return rejectWithValue(error.response?.data?.message || 'Failed to add comment');
+    }
+});
+
+export const fetchActivityThunk = createAsyncThunk('board/fetchActivity', async (boardId, { rejectWithValue }) => {
+    try {
+        const { data } = await api.get(`/boards/${boardId}/activity`);
+        return data;
+    } catch (error) {
+        return rejectWithValue(error.response?.data?.message || 'Failed to fetch activity');
+    }
+});
+
+
+
 const boardSlice = createSlice({
     name: 'board',
     initialState: {
@@ -140,6 +160,7 @@ const boardSlice = createSlice({
         currentBoard: null,
         lists: [],
         cards: [],
+        activities: [],
         loading: false,
         error: null,
     },
@@ -255,6 +276,13 @@ const boardSlice = createSlice({
             })
             .addCase(removeMemberThunk.fulfilled, (state, action) => {
                 state.currentBoard = action.payload;
+            })
+            .addCase(addCommentThunk.fulfilled, (state, action) => {
+                const idx = state.cards.findIndex((c) => c._id === action.payload._id);
+                if (idx !== -1) state.cards[idx] = action.payload;
+            })
+            .addCase(fetchActivityThunk.fulfilled, (state, action) => {
+                state.activities = action.payload;
             })
     },
 });

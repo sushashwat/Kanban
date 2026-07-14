@@ -20,6 +20,7 @@ import ListColumn from '../components/ListColumn';
 import CardDetailModal from '../components/CardDetailModal';
 import AddMemberModal from '../components/AddMemberModal';
 import MemberListModal from '../components/MemberListModal';
+import { updateBoardThunk } from '../redux/slices/boardSlice';
 
 const BoardPage = () => {
     const { id: boardId } = useParams();
@@ -30,10 +31,14 @@ const BoardPage = () => {
     const { currentBoard, lists, cards, loading } = useSelector((state) => state.board);
 
     const [selectedCard, setSelectedCard] = useState(null);
+    const [editingTitle, setEditingTitle] = useState(false);
+    const [titleDraft, setTitleDraft] = useState('');
     const [listTitle, setListTitle] = useState('');
     const [addingList, setAddingList] = useState(false);
     const [showAddMember, setShowAddMember] = useState(false);
     const [showMembers, setShowMembers] = useState(false);
+    const [titleHovered, setTitleHovered] = useState(false);
+
     const { userInfo } = useSelector((state) => state.auth);
 
     useEffect(() => {
@@ -106,18 +111,60 @@ const BoardPage = () => {
         }
         setListTitle('');
     };
+    const startEditTitle = () => {
+        setTitleDraft(currentBoard.title);
+        setEditingTitle(true);
+    };
+
+    const saveTitle = () => {
+        if (titleDraft.trim() && titleDraft.trim() !== currentBoard.title) {
+            dispatch(updateBoardThunk({ boardId, title: titleDraft.trim() }));
+        }
+        setEditingTitle(false);
+    };
 
     if (loading || !currentBoard) {
-        return <div style={styles.loadingWrap}>Loading board...</div>;
+        return (
+            <div style={styles.wrap}>
+                <div style={styles.blob1} /><div style={styles.blob2} /><div style={styles.blob3} />
+                <div style={styles.loadingWrap}>
+                    <div className="mono" style={{ color: 'var(--accent)', fontSize: 14 }}>Loading board...</div>
+                </div>
+            </div>
+        );
     }
 
     const sortedLists = [...lists].sort((a, b) => a.order - b.order);
 
     return (
         <div style={styles.wrap}>
+            <div style={styles.blob1} />
+            <div style={styles.blob2} />
+            <div style={styles.blob3} />
             <header style={styles.header}>
                 <button className="btn-ghost" onClick={() => navigate('/dashboard')}>← Boards</button>
-                <h2 style={styles.boardTitle}>{currentBoard.title}</h2>
+                {editingTitle ? (
+                    <input
+                        className="input"
+                        autoFocus
+                        value={titleDraft}
+                        onChange={(e) => setTitleDraft(e.target.value)}
+                        onBlur={saveTitle}
+                        onKeyDown={(e) => e.key === 'Enter' && saveTitle()}
+                        style={{ ...styles.boardTitle, maxWidth: 300, padding: '4px 8px' }}
+                    />
+                ) : (
+                    <h2
+                        style={{ ...styles.boardTitle, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
+                        onClick={startEditTitle}
+                        onMouseEnter={() => setTitleHovered(true)}
+                        onMouseLeave={() => setTitleHovered(false)}
+                        title="Click to rename"
+                    >
+                        {currentBoard.title}
+                        <span style={{ fontSize: 13, color: 'var(--text-secondary)', opacity: titleHovered ? 0.8 : 0 }}>✎</span>
+                    </h2>
+                )}
                 <div style={{ display: 'flex', alignItems: 'center', marginLeft: 'auto' }}>
                     <div style={{ display: 'flex', cursor: 'pointer' }} onClick={() => setShowMembers(true)}>
                         {currentBoard.members?.slice(0, 5).map((m) => (
@@ -194,15 +241,35 @@ const BoardPage = () => {
 };
 
 const styles = {
-    wrap: { minHeight: '100vh', background: 'var(--bg-void)', display: 'flex', flexDirection: 'column' },
+    wrap: {
+        minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden',
+    },
     loadingWrap: { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' },
-    header: { display: 'flex', alignItems: 'center', gap: 16, padding: '14px 24px', borderBottom: '1px solid var(--border-subtle)' },
+    header: { display: 'flex', alignItems: 'center', gap: 16, padding: '14px 24px', borderBottom: '1px solid var(--border-subtle)', position: 'relative', zIndex: 1, },
     boardTitle: { fontSize: 17, fontWeight: 700, flex: 1 },
-    board: { display: 'flex', gap: 14, padding: '20px 24px', overflowX: 'auto', flex: 1, alignItems: 'flex-start' },
+    board: { display: 'flex', gap: 14, padding: '20px 24px', overflowX: 'auto', flex: 1, alignItems: 'flex-start', position: 'relative', zIndex: 1, },
     addListWrap: { width: 260, flexShrink: 0 },
     addListBtn: {
         background: 'var(--bg-panel)', border: '1px dashed var(--border-subtle)', color: 'var(--text-secondary)',
         borderRadius: 8, padding: '12px 14px', width: '100%', textAlign: 'left', fontSize: 13.5,
+    },
+    blob1: {
+        position: 'fixed', top: '10%', left: '5%', width: 380, height: 380,
+        borderRadius: '50%', background: 'radial-gradient(circle, rgba(240,136,62,0.16), transparent 70%)',
+        filter: 'blur(20px)', animation: 'float1 18s ease-in-out infinite',
+        pointerEvents: 'none', zIndex: 0, willChange: 'transform',
+    },
+    blob2: {
+        position: 'fixed', top: '50%', right: '8%', width: 320, height: 320,
+        borderRadius: '50%', background: 'radial-gradient(circle, rgba(163,113,247,0.13), transparent 70%)',
+        filter: 'blur(20px)', animation: 'float2 22s ease-in-out infinite',
+        pointerEvents: 'none', zIndex: 0, willChange: 'transform',
+    },
+    blob3: {
+        position: 'fixed', bottom: '5%', left: '35%', width: 280, height: 280,
+        borderRadius: '50%', background: 'radial-gradient(circle, rgba(63,185,80,0.13), transparent 70%)',
+        filter: 'blur(20px)', animation: 'float3 25s ease-in-out infinite',
+        pointerEvents: 'none', zIndex: 0, willChange: 'transform',
     },
 };
 

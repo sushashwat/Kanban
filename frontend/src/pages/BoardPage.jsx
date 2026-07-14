@@ -21,6 +21,8 @@ import CardDetailModal from '../components/CardDetailModal';
 import AddMemberModal from '../components/AddMemberModal';
 import MemberListModal from '../components/MemberListModal';
 import { updateBoardThunk } from '../redux/slices/boardSlice';
+import ActivityPanel from '../components/ActivityPanel';
+import { fetchActivityThunk } from '../redux/slices/boardSlice';
 
 const BoardPage = () => {
     const { id: boardId } = useParams();
@@ -38,13 +40,18 @@ const BoardPage = () => {
     const [showAddMember, setShowAddMember] = useState(false);
     const [showMembers, setShowMembers] = useState(false);
     const [titleHovered, setTitleHovered] = useState(false);
-
+    const [showActivity, setShowActivity] = useState(false);
+    const { activities } = useSelector((state) => state.board);
     const { userInfo } = useSelector((state) => state.auth);
 
     useEffect(() => {
         dispatch(fetchBoardDetail(boardId));
         return () => dispatch(clearCurrentBoard());
     }, [dispatch, boardId]);
+
+    useEffect(() => {
+        if (showActivity) dispatch(fetchActivityThunk(boardId));
+    }, [showActivity, dispatch, boardId]);
 
     // --- Real-time listeners: doosre users ke actions yahan reflect hote hain ---
     useEffect(() => {
@@ -185,6 +192,9 @@ const BoardPage = () => {
                     <button className="btn-ghost" style={{ marginLeft: 10 }} onClick={() => setShowAddMember(true)}>
                         + Invite
                     </button>
+                    <button className="btn-ghost" style={{ marginLeft: 8 }} onClick={() => setShowActivity(!showActivity)}>
+                        Activity
+                    </button>
                 </div>
             </header>
 
@@ -223,6 +233,16 @@ const BoardPage = () => {
                     </div>
                 </div>
             </DragDropContext>
+
+            {showActivity && (
+                <div style={{ position: 'fixed', top: 70, right: 24, width: 320, background: 'var(--bg-panel)', border: '1px solid var(--border-subtle)', borderRadius: 10, padding: 18, zIndex: 50, maxHeight: '70vh' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                        <h4 style={{ fontSize: 14, fontWeight: 700 }}>Activity</h4>
+                        <button onClick={() => setShowActivity(false)} style={{ background: 'none', color: 'var(--text-secondary)', fontSize: 16 }}>×</button>
+                    </div>
+                    <ActivityPanel activities={activities} />
+                </div>
+            )}
 
             {selectedCard && (
                 <CardDetailModal

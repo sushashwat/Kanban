@@ -1,7 +1,7 @@
 :root {
-  --bg-void: #0d1117;
-  --bg-panel: #161b22;
-  --bg-raised: #1c2128;
+  --bg-void: #000000;
+  --bg-panel: #0d0d0d;
+  --bg-raised: #161616;
   --border-subtle: #30363d;
   --border-strong: #484f58;
   --text-primary: #e6edf3;
@@ -22,10 +22,16 @@
 }
 
 body {
-  background: var(--bg-void);
+  background-color: #000000;
+  background-image:
+    radial-gradient(ellipse 1200px 800px at 50% -10%, rgba(240, 136, 62, 0.18), transparent 60%),
+    linear-gradient(180deg, rgba(240, 136, 62, 0.04) 0%, transparent 25%);
+  background-repeat: no-repeat;
+  background-attachment: fixed;
   color: var(--text-primary);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
 }
 
 a {
@@ -107,4 +113,21 @@ input, textarea, select {
 .error-text {
   color: var(--danger);
   font-size: 13px;
+}
+
+@keyframes float1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(40px, -30px) scale(1.1); }
+  66% { transform: translate(-20px, 20px) scale(0.95); }
+}
+
+@keyframes float2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-50px, 30px) scale(1.15); }
+}
+
+@keyframes float3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  40% { transform: translate(30px, 40px) scale(0.9); }
+  70% { transform: translate(-30px, -20px) scale(1.05); }
 }

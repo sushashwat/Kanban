@@ -88,6 +88,15 @@ export const updateCardThunk = createAsyncThunk(
     }
 );
 
+export const updateBoardThunk = createAsyncThunk('board/updateBoard', async ({ boardId, title }, { rejectWithValue }) => {
+    try {
+        const { data } = await api.put(`/boards/${boardId}`, { title });
+        return data;
+    } catch (error) {
+        return rejectWithValue(error.response?.data?.message || 'Failed to update board');
+    }
+});
+
 export const deleteCardThunk = createAsyncThunk('board/deleteCard', async (cardId, { rejectWithValue }) => {
     try {
         await api.delete(`/cards/${cardId}`);
@@ -225,6 +234,11 @@ const boardSlice = createSlice({
             .addCase(updateCardThunk.fulfilled, (state, action) => {
                 const idx = state.cards.findIndex((c) => c._id === action.payload._id);
                 if (idx !== -1) state.cards[idx] = action.payload;
+            })
+            .addCase(updateBoardThunk.fulfilled, (state, action) => {
+                state.currentBoard = action.payload;
+                const idx = state.boards.findIndex((b) => b._id === action.payload._id);
+                if (idx !== -1) state.boards[idx] = action.payload;
             })
             .addCase(deleteListThunk.fulfilled, (state, action) => {
                 state.lists = state.lists.filter((l) => l._id !== action.payload);

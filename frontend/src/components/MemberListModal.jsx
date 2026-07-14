@@ -1,17 +1,19 @@
+import { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { removeMemberThunk } from '../redux/slices/boardSlice';
+import ConfirmDialog from './ConfirmDialog';
 
 const MemberListModal = ({ board, currentUserId, onClose }) => {
   const dispatch = useDispatch();
   const isOwner = board.owner._id === currentUserId;
+  const [removeTarget, setRemoveTarget] = useState(null);
 
-  const handleRemove = (memberId) => {
-    if (window.confirm('Remove this member from the board?')) {
-      dispatch(removeMemberThunk({ boardId: board._id, memberId }));
-    }
+  const confirmRemove = () => {
+    dispatch(removeMemberThunk({ boardId: board._id, memberId: removeTarget }));
+    setRemoveTarget(null);
   };
 
-  return (
+ return (
     <div style={styles.overlay} onClick={onClose}>
       <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
         <h3 style={{ marginBottom: 16 }}>Board members</h3>
@@ -28,7 +30,7 @@ const MemberListModal = ({ board, currentUserId, onClose }) => {
                 </div>
               </div>
               {isOwner && m._id !== board.owner._id && (
-                <button className="btn-ghost" style={{ color: 'var(--danger)', padding: '4px 10px', fontSize: 12 }} onClick={() => handleRemove(m._id)}>
+                <button className="btn-ghost" style={{ color: 'var(--danger)', padding: '4px 10px', fontSize: 12 }} onClick={() => setRemoveTarget(m._id)}>
                   Remove
                 </button>
               )}
@@ -37,7 +39,16 @@ const MemberListModal = ({ board, currentUserId, onClose }) => {
         </div>
         <button className="btn-ghost" style={{ marginTop: 20, width: '100%' }} onClick={onClose}>Close</button>
       </div>
-    </div>  
+
+      {removeTarget && (
+        <ConfirmDialog
+          title="Remove member?"
+          message="This member will lose access to the board immediately."
+          onConfirm={confirmRemove}
+          onCancel={() => setRemoveTarget(null)}
+        />
+      )}
+    </div>
   );
 };
 

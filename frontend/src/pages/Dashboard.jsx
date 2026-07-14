@@ -1,16 +1,19 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { fetchBoards, createBoard, deleteBoardThunk, leaveBoardThunk } from '../redux/slices/boardSlice';
+import { fetchBoards, createBoard, deleteBoardThunk, updateBoardThunk } from '../redux/slices/boardSlice';
 import { logout } from '../redux/slices/authSlice';
 import ConfirmDialog from '../components/ConfirmDialog';
 
-const COLORS = ['#F0883E', '#3FB950', '#58A6FF', '#DB61A2', '#A371F7'];
+const COLORS = ['#F0883E', '#3FB950', '#58A6FF', '#DB61A2', '#A371F7', '#F0883E', '#3FB950', '#58A6FF'];
 
 const Dashboard = () => {
   const [newTitle, setNewTitle] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [hoveredId, setHoveredId] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [editTitle, setEditTitle] = useState('');
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { boards, loading } = useSelector((state) => state.board);
@@ -25,6 +28,7 @@ const Dashboard = () => {
     if (!newTitle.trim()) return;
     dispatch(createBoard(newTitle.trim()));
     setNewTitle('');
+    setShowForm(false);
   };
 
   const handleDelete = (e, boardId) => {
@@ -32,16 +36,23 @@ const Dashboard = () => {
     setConfirmDeleteId(boardId);
   };
 
+  const startEdit = (e, board) => {
+    e.stopPropagation();
+    setEditingId(board._id);
+    setEditTitle(board.title);
+  };
+
+  const saveEdit = (e, boardId) => {
+    e?.stopPropagation();
+    if (editTitle.trim()) {
+      dispatch(updateBoardThunk({ boardId, title: editTitle.trim() }));
+    }
+    setEditingId(null);
+  };
+
   const confirmDelete = () => {
     dispatch(deleteBoardThunk(confirmDeleteId));
     setConfirmDeleteId(null);
-  };
-
-  const handleLeave = (e, boardId) => {
-    e.stopPropagation();
-    if (window.confirm('Leave this board?')) {
-      dispatch(leaveBoardThunk(boardId));
-    }
   };
 
   return (
@@ -82,34 +93,75 @@ const Dashboard = () => {
 
         {!loading && boards.length === 0 && (
           <div style={styles.empty}>
-            <p style={{ color: 'var(--text-secondary)' }}>
-              No boards yet. Create one to get started.
-            </p>
+            <p style={{ color: 'var(--text-secondary)' }}>No boards yet. Create one to get started.</p>
           </div>
         )}
 
         <div style={styles.grid}>
-          {boards.map((b, i) => (
-            <div
-              key={b._id}
-              style={{ ...styles.boardCard, borderTop: `3px solid ${COLORS[i % COLORS.length]}` }}
-              onClick={() => navigate(`/board/${b._id}`)}
-            >
-              <div style={styles.boardCardTop}>
-                <h3 style={styles.boardTitle}>{b.title}</h3>
-                {b.owner?._id === userInfo?._id ? (
-                  <button onClick={(e) => handleDelete(e, b._id)} style={styles.deleteBtn} title="Delete board">×</button>
+          {boards.map((b, i) => {
+            const accent = COLORS[i % COLORS.length];
+            const isHovered = hoveredId === b._id;
+            return (
+              <div
+                key={b._id}
+                style={{
+                  ...styles.boardCard,
+                  transform: isHovered ? 'translateY(-3px)' : 'translateY(0)',
+                  borderColor: isHovered ? accent + '80' : 'var(--border-subtle)',
+                  boxShadow: isHovered ? `0 10px 30px -8px ${accent}40` : '0 1px 2px rgba(0,0,0,0.2)',
+                }}
+                onMouseEnter={() => setHoveredId(b._id)}
+                onMouseLeave={() => setHoveredId(null)}
+                onClick={() => navigate(`/board/${b._id}`)}
+              >
+                <div style={styles.boardCardTop}>
+                  <div style={{ ...styles.iconSquare, background: accent }}>
+                    {b.title?.[0]?.toUpperCase()}
+                  </div>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    {b.owner?._id === userInfo?._id && (
+                      <button
+                        onClick={(e) => startEdit(e, b)}
+                        style={{ ...styles.deleteBtn, fontSize: 13 }}
+                        title="Rename board"
+                      >
+                        ✎
+                      </button>
+                    )}
+                    {b.owner?._id === userInfo?._id && (
+                      <button onClick={(e) => handleDelete(e, b._id)} style={styles.deleteBtn} title="Delete board">×</button>
+                    )}
+                  </div>
+                </div>
+
+                {editingId === b._id ? (
+                  <input
+                    className="input"
+                    autoFocus
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    onClick={(e) => e.stopPropagation()}
+                    onBlur={(e) => saveEdit(e, b._id)}
+                    onKeyDown={(e) => e.key === 'Enter' && saveEdit(e, b._id)}
+                    style={{ marginBottom: 4, padding: '4px 8px', fontSize: 15 }}
+                  />
                 ) : (
-                  <button onClick={(e) => handleLeave(e, b._id)} style={{ ...styles.deleteBtn, fontSize: 12 }} title="Leave board">Leave</button>
+                  <h3 style={styles.boardTitle}>{b.title}</h3>
                 )}
+
+                <p style={styles.memberCount}>{b.members?.length || 1} member{b.members?.length !== 1 ? 's' : ''}</p>
               </div>
-              <p style={styles.memberCount}>
-                {b.members?.length || 1} member{b.members?.length !== 1 ? 's' : ''}
-              </p>
-            </div>
-          ))}
+            );
+          })}
         </div>
+
+        {!loading && boards.length > 0 && (
+          <p style={{ marginTop: 40, fontSize: 12, color: 'var(--text-secondary)', textAlign: 'center' }}>
+            {boards.length} board{boards.length !== 1 ? 's' : ''} · real-time sync via Socket.io
+          </p>
+        )}
       </main>
+
       {confirmDeleteId && (
         <ConfirmDialog
           title="Delete board?"
@@ -123,12 +175,17 @@ const Dashboard = () => {
 };
 
 const styles = {
-  wrap: { minHeight: '100vh', background: 'var(--bg-void)' },
+  wrap: { minHeight: '100vh' },
   header: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
     padding: '16px 32px', borderBottom: '1px solid var(--border-subtle)',
   },
-  logo: { fontSize: 18, fontWeight: 700, color: 'var(--accent)' },
+  logo: {
+    fontSize: 18, fontWeight: 700,
+    background: 'linear-gradient(135deg, #F0883E, #DB61A2)',
+    WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+    backgroundClip: 'text',
+  },
   userArea: { display: 'flex', alignItems: 'center', gap: 12 },
   avatar: {
     width: 30, height: 30, borderRadius: '50%', display: 'flex',
@@ -137,19 +194,27 @@ const styles = {
   },
   main: { maxWidth: 1100, margin: '0 auto', padding: '40px 32px' },
   titleRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
-  h1: { fontSize: 24, fontWeight: 700 },
+  h1: { fontSize: 26, fontWeight: 700 },
   createForm: { display: 'flex', gap: 10, marginBottom: 28, alignItems: 'center' },
   empty: { border: '1px dashed var(--border-subtle)', borderRadius: 10, padding: 40, textAlign: 'center' },
-  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 },
+  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 18 },
   boardCard: {
-    background: 'var(--bg-panel)', border: '1px solid var(--border-subtle)',
-    borderRadius: 8, padding: '18px 16px', cursor: 'pointer',
+    background: 'linear-gradient(155deg, var(--bg-raised) 0%, var(--bg-panel) 60%)',
+    border: '1px solid var(--border-subtle)',
+    borderRadius: 12, cursor: 'pointer', overflow: 'hidden', display: 'flex',
+    flexDirection: 'column', padding: '20px 18px', gap: 6,
+    transition: 'transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease',
+    position: 'relative',
+  },
+  iconSquare: {
+    width: 32, height: 32, borderRadius: 7, marginBottom: 10,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontSize: 14, fontWeight: 700, color: '#0d1117',
   },
   boardCardTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' },
-  boardTitle: { fontSize: 15, fontWeight: 600 },
+  boardTitle: { fontSize: 15.5, fontWeight: 600 },
   deleteBtn: { background: 'none', color: 'var(--text-secondary)', fontSize: 18, lineHeight: 1 },
   memberCount: { fontSize: 12, color: 'var(--text-secondary)', marginTop: 8 },
 };
-
 
 export default Dashboard;

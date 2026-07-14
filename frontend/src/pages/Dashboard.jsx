@@ -9,6 +9,7 @@ const COLORS = ['#F0883E', '#3FB950', '#58A6FF', '#DB61A2', '#A371F7', '#F0883E'
 
 const Dashboard = () => {
   const [newTitle, setNewTitle] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [hoveredId, setHoveredId] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
@@ -54,6 +55,9 @@ const Dashboard = () => {
     dispatch(deleteBoardThunk(confirmDeleteId));
     setConfirmDeleteId(null);
   };
+  const filteredBoards = boards.filter((b) =>
+    b.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div style={styles.wrap}>
@@ -74,6 +78,16 @@ const Dashboard = () => {
           <button className="btn" onClick={() => setShowForm(!showForm)}>+ New board</button>
         </div>
 
+        <div style={{ marginBottom: 20 }}>
+          <input
+            className="input"
+            placeholder="Search your boards..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{ maxWidth: 320 }}
+          />
+        </div>
+
         {showForm && (
           <form onSubmit={handleCreate} style={styles.createForm}>
             <input
@@ -91,14 +105,16 @@ const Dashboard = () => {
 
         {loading && <p style={{ color: 'var(--text-secondary)' }}>Loading boards...</p>}
 
-        {!loading && boards.length === 0 && (
+        {!loading && filteredBoards.length === 0 && (
           <div style={styles.empty}>
-            <p style={{ color: 'var(--text-secondary)' }}>No boards yet. Create one to get started.</p>
+            <p style={{ color: 'var(--text-secondary)' }}>
+              {searchQuery ? 'No boards match your search.' : 'No boards yet. Create one to get started.'}
+            </p>
           </div>
         )}
 
         <div style={styles.grid}>
-          {boards.map((b, i) => {
+          {filteredBoards.map((b, i) => {
             const accent = COLORS[i % COLORS.length];
             const isHovered = hoveredId === b._id;
             return (

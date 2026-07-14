@@ -1,4 +1,5 @@
 import Card from '../models/Card.js';
+import logActivity from '../config/logActivity.js';
 
 // @desc    Create a new card in a list
 // @route   POST /api/cards
@@ -15,6 +16,7 @@ const createCard = async (req, res) => {
     const order = lastCard ? lastCard.order + 1 : 0;
 
     const card = await Card.create({ title, list, board, description, priority, dueDate, order });
+    await logActivity(board, req.user._id, 'created card', title);
     res.status(201).json(card);
   } catch (error) {
     console.error(error);
@@ -50,6 +52,7 @@ const moveCard = async (req, res) => {
   try {
     const { destListId, destIndex } = req.body;
     const card = await Card.findById(req.params.id);
+    await logActivity(card.board, req.user._id, 'moved card', card.title);
     if (!card) return res.status(404).json({ message: 'Card not found' });
 
     const sourceListId = card.list.toString();
@@ -96,7 +99,7 @@ const deleteCard = async (req, res) => {
   try {
     const card = await Card.findById(req.params.id);
     if (!card) return res.status(404).json({ message: 'Card not found' });
-
+    await logActivity(card.board, req.user._id, 'deleted card', card.title);
     await card.deleteOne();
     res.json({ message: 'Card deleted', cardId: req.params.id });
   } catch (error) {
@@ -105,4 +108,31 @@ const deleteCard = async (req, res) => {
   }
 };
 
-export { createCard, updateCard, moveCard, deleteCard };
+// @desc    Add a comment to a card
+// @route   POST /api/cards/:id/comments
+// @access  Private
+const addComment = async (req, res) => {
+  try {
+    const { text } = req.body;
+    if (!text || !text.trim()) {
+      return res.status(400).json({ message: 'Comment cannot be empty' });
+    }
+
+    const card = await Card.findById(req.params.id);
+    if (!card) return res.status(404).json({ message: 'Card not found' });
+
+    card.comments.push({ text: text.trim(), author: req.user._id });
+    await card.save();
+
+    const updatedCard = await Card.findById(card._id)
+      .populate('assignedTo', 'name email avatarColor')
+      .populate('comments.author', 'name email avatarColor');
+
+    res.status(201).json(updatedCard);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export { createCard, updateCard, moveCard, deleteCard, addComment };

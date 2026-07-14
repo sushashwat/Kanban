@@ -2,6 +2,7 @@ import Board from '../models/Board.js';
 import List from '../models/List.js';
 import Card from '../models/Card.js';
 import User from '../models/User.js';
+import logActivity from '../config/logActivity.js';
 
 // @desc    Get all boards for logged-in user (owned or member of)
 // @route   GET /api/boards
@@ -73,7 +74,8 @@ const getBoardById = async (req, res) => {
 
     const [lists, cards] = await Promise.all([
       List.find({ board: board._id }).sort({ order: 1 }),
-      Card.find({ board: board._id }).populate('assignedTo', 'name email avatarColor').sort({ order: 1 }),
+      Card.find({ board: board._id }).populate('assignedTo', 'name email avatarColor')
+      .sort({ order: 1 }),
     ]);
 
     res.json({ board, lists, cards });
@@ -146,6 +148,7 @@ const addMember = async (req, res) => {
     const { email } = req.body;
 
     const board = await Board.findById(req.params.id);
+    await logActivity(board._id, req.user._id, 'added member', userToAdd.name);
     if (!board) return res.status(404).json({ message: 'Board not found' });
 
     if (board.owner.toString() !== req.user._id.toString()) {

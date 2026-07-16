@@ -148,7 +148,6 @@ const addMember = async (req, res) => {
     const { email } = req.body;
 
     const board = await Board.findById(req.params.id);
-    await logActivity(board._id, req.user._id, 'added member', userToAdd.name);
     if (!board) return res.status(404).json({ message: 'Board not found' });
 
     if (board.owner.toString() !== req.user._id.toString()) {
@@ -164,6 +163,8 @@ const addMember = async (req, res) => {
 
     board.members.push(userToAdd._id);
     await board.save();
+
+    await logActivity(board._id, req.user._id, 'added member', userToAdd.name);
 
     const populatedBoard = await Board.findById(board._id)
       .populate('owner', 'name email avatarColor')

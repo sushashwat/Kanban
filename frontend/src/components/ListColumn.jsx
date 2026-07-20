@@ -96,7 +96,7 @@ const ListColumn = ({ list, cards, onCardClick, socket, boardId }) => {
 const styles = {
   column: {
     background: 'var(--bg-panel)', borderRadius: 8, width: 280, flexShrink: 0,
-    padding: '12px 10px', maxHeight: 'calc(100vh - 180px)', display: 'flex', flexDirection: 'column',
+    padding: '12px 10px', maxHeight:500, display: 'flex', flexDirection: 'column',
   },
   header: { display: 'flex', alignItems: 'center', gap: 8, padding: '2px 6px 10px' },
   title: { fontSize: 14, fontWeight: 600, flex: 1 },

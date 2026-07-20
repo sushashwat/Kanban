@@ -267,7 +267,7 @@ const styles = {
     loadingWrap: { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' },
     header: { display: 'flex', alignItems: 'center', gap: 16, padding: '14px 24px', borderBottom: '1px solid var(--border-subtle)', position: 'relative', zIndex: 1, },
     boardTitle: { fontSize: 17, fontWeight: 700, flex: 1 },
-    board: { display: 'flex', flexwrap:'wrap',gap: 14, padding: '20px 24px', overflowY: 'auto', flex: 1, alignItems: 'flex-start', position: 'relative', zIndex: 1, },
+    board: { display: 'flex', flexWrap:'wrap',gap: 14, padding: '20px 24px', overflowX: 'auto', flex: 1, alignItems: 'flex-start', position: 'relative', zIndex: 1,},
     addListWrap: { width: 260, flexShrink: 0 },
     addListBtn: {
         background: 'var(--bg-panel)', border: '1px dashed var(--border-subtle)', color: 'var(--text-secondary)',
